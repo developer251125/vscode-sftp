@@ -1,3 +1,10 @@
+## 1.16.4 - 2026-05-07
+* [#401] Feature: Added support for `preUploadTasks` and `postUploadTasks` in `sftp.json` (custom commands run before and after upload).
+* [#402] Enhancement: New command `sftp.uploadWithTasks` integrates task chaining with upload workflow.
+* [#403] Improvement: Upload process can now be aborted if any `preUploadTasks` return non‑zero exit code.
+* [#404] Docs: Updated README and schema definitions to include task chaining configuration examples.
+
+
 ## 1.16.3 - 2023-06-16
 * [#356] New Feature : Upload to all profiles (Pull request [#313](https://github.com/Natizyskunk/vscode-sftp/pull/313) from @wewawa vscode-sftp:create_multi_command).
 * [#357] Fix : Correcting Typo 'avaliable' => 'available' (Pull request [#343](https://github.com/Natizyskunk/vscode-sftp/pull/343) from @kjo-sdds vscode-sftp:develop).

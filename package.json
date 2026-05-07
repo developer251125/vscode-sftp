@@ -2,7 +2,7 @@
   "name": "sftp-taskchain",
   "displayName": "SFTP with Task Chaining",
   "description": "SFTP/FTP Sync extension for VS Code with pre/post upload tasks",
-  "version": "1.16.3",
+  "version": "1.16.4",
   "publisher": "Haris Ahmed",
   "author": "Haris Ahmed <haris.ahmed@gmail.com> (https://github.com/developer251125)",
   "engines": {
