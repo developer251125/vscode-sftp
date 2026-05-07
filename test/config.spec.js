@@ -28,6 +28,12 @@ const configScheme = {
   uploadOnSave: Joi.boolean().optional(),
   useTempFile: Joi.boolean().optional(),
   openSsh: Joi.boolean().optional(),
+  preUploadTasks: Joi.array()
+    .min(0)
+    .items(Joi.string()),
+  postUploadTasks: Joi.array()
+    .min(0)
+    .items(Joi.string()),
   syncMode: Joi.any().valid('update', 'full'),
   ignore: Joi.array()
     .min(0)
@@ -38,6 +44,12 @@ const configScheme = {
       .optional(),
     autoUpload: Joi.boolean().optional(),
     autoDelete: Joi.boolean().optional(),
+    preUploadTasks: Joi.array()
+      .min(0)
+      .items(Joi.string()),
+    postUploadTasks: Joi.array()
+      .min(0)
+      .items(Joi.string()),
   },
 };
 

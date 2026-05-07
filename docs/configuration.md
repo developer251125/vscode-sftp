@@ -64,6 +64,31 @@ If set to true, the `useTempFile` option must also be set to true.
 
 **default**: false
 
+## preUploadTasks
+*string[]*: Run these hooks before each local-to-remote file upload. Hooks are executed in order and stop on first failure.
+
+Each entry can be either:
+- a VS Code task label from `tasks.json`, or
+- a shell command.
+
+If a matching VS Code task label exists, it is executed as a task. Otherwise the entry is executed as a shell command.
+
+Shell command entries support placeholders:
+- `${localPath}`
+- `${remotePath}`
+- `${workspace}`
+- `${serviceName}`
+- `${trigger}` (`manual`, `uploadOnSave`, or `watcher`)
+
+**default**: []
+
+## postUploadTasks
+*string[]*: Run these hooks after each successful local-to-remote file upload.
+
+Hooks are executed in order. Post hook failures are logged but do not roll back a completed file upload.
+
+**default**: []
+
 ## syncOption
 *object*: Configure the behavior of the `Sync` command.
 
@@ -101,6 +126,16 @@ Set `uploadOnSave` to false when you watch everything.
 
 ## watcher.autoDelete
 *boolean*: Delete when the file is removed.
+
+## watcher.preUploadTasks
+*string[]*: Additional pre-upload hooks that run only for watcher-driven uploads.
+
+These are appended after `preUploadTasks`.
+
+## watcher.postUploadTasks
+*string[]*: Additional post-upload hooks that run only for watcher-driven uploads.
+
+These are appended after `postUploadTasks`.
 
 ## remoteTimeOffsetInHours
 *number*: The number of hours difference between the local machine and the remote server (remote minus local).

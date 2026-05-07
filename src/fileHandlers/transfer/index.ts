@@ -1,6 +1,7 @@
 import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
+import { runUploadHooks } from '../../modules/uploadTaskHooks';
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
@@ -127,6 +128,12 @@ export const upload = createFileHandler<TransferOption>({
       perserveTargetMode: config.protocol === 'sftp' && !config.filePerm && !config.dirPerm,
       useTempFile: config.useTempFile,
       openSsh: config.openSsh,
+      preUploadTasks: config.preUploadTasks || [],
+      postUploadTasks: config.postUploadTasks || [],
+      uploadTrigger: 'manual',
+      uploadHookWorkspace: this.fileService.workspace,
+      uploadHookServiceName: this.fileService.name,
+      runUploadHooks,
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
     };
@@ -145,6 +152,12 @@ export const uploadFile = createFileHandler<TransferOption>({
       perserveTargetMode: config.protocol === 'sftp' && !config.filePerm,
       useTempFile: config.useTempFile,
       openSsh: config.openSsh,
+      preUploadTasks: config.preUploadTasks || [],
+      postUploadTasks: config.postUploadTasks || [],
+      uploadTrigger: 'manual',
+      uploadHookWorkspace: this.fileService.workspace,
+      uploadHookServiceName: this.fileService.name,
+      runUploadHooks,
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
     };
@@ -163,6 +176,12 @@ export const uploadFolder = createFileHandler<TransferOption>({
       perserveTargetMode: config.protocol === 'sftp' && !config.dirPerm,
       useTempFile: config.useTempFile,
       openSsh: config.openSsh,
+      preUploadTasks: config.preUploadTasks || [],
+      postUploadTasks: config.postUploadTasks || [],
+      uploadTrigger: 'manual',
+      uploadHookWorkspace: this.fileService.workspace,
+      uploadHookServiceName: this.fileService.name,
+      runUploadHooks,
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
     };

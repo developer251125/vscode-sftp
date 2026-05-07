@@ -27,6 +27,22 @@
             "type": "boolean",
             "description": "delete when file changed.",
             "default": false
+          },
+          "preUploadTasks": {
+            "type": "array",
+            "description": "Commands to run before uploading a file. If any command exits with non-zero, upload is aborted.",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "postUploadTasks": {
+            "type": "array",
+            "description": "Commands to run after a file is successfully uploaded.",
+            "items": {
+              "type": "string"
+            },
+            "default": []
           }
         },
         "required": ["files"],
@@ -69,6 +85,22 @@
         "enum": ["confirm", true, false],
         "description": "True to download when a file opens.",
         "default": "confirm"
+      },
+      "preUploadTasks": {
+        "type": "array",
+        "description": "Commands to run before uploading a file. If any command exits with non-zero, upload is aborted.",
+        "items": {
+          "type": "string"
+        },
+        "default": []
+      },
+      "postUploadTasks": {
+        "type": "array",
+        "description": "Commands to run after a file is successfully uploaded.",
+        "items": {
+          "type": "string"
+        },
+        "default": []
       },
       "syncOption": {
         "type": "object",

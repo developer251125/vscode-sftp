@@ -11,6 +11,24 @@ export enum TransferDirection {
   REMOTE_TO_LOCAL = 'remote ➞ local',
 }
 
+export type UploadHookPhase = 'pre' | 'post';
+
+export interface UploadHookContext {
+  localFsPath: string;
+  remoteFsPath: string;
+  transferDirection: TransferDirection;
+  transferType: string;
+  uploadTrigger?: 'manual' | 'uploadOnSave' | 'watcher';
+  workspace?: string;
+  serviceName?: string;
+}
+
+export type UploadHookRunner = (
+  phase: UploadHookPhase,
+  tasks: string[],
+  context: UploadHookContext
+) => Promise<void>;
+
 interface FileHandle {
   fsPath: string;
   fileSystem: FileSystem;
@@ -26,6 +44,12 @@ export interface TransferOption {
   perserveTargetMode: boolean;
   useTempFile?: boolean;
   openSsh?: boolean;
+  preUploadTasks?: string[];
+  postUploadTasks?: string[];
+  uploadTrigger?: 'manual' | 'uploadOnSave' | 'watcher';
+  uploadHookWorkspace?: string;
+  uploadHookServiceName?: string;
+  runUploadHooks?: UploadHookRunner;
 }
 
 export default class TransferTask implements Task {
@@ -85,20 +109,59 @@ export default class TransferTask implements Task {
     const targetFs = this._targetFs;
     switch (this.fileType) {
       case FileType.File:
-        await this._transferFile();
+        await this._runWithUploadHooks(() => this._transferFile());
         break;
       case FileType.SymbolicLink:
-        await fileOperations.transferSymlink(
-          src,
-          target,
-          srcFs,
-          targetFs,
-          this._TransferOption
+        await this._runWithUploadHooks(() =>
+          fileOperations.transferSymlink(
+            src,
+            target,
+            srcFs,
+            targetFs,
+            this._TransferOption
+          )
         );
         break;
       default:
         logger.warn(`Unsupported file type (type = ${this.fileType}). File ${src}`);
     }
+  }
+
+  private async _runWithUploadHooks(transfer: () => Promise<void>) {
+    const runner = this._TransferOption.runUploadHooks;
+    const isLocalToRemote = this._transferDirection === TransferDirection.LOCAL_TO_REMOTE;
+    const preUploadTasks = this._TransferOption.preUploadTasks || [];
+    const postUploadTasks = this._TransferOption.postUploadTasks || [];
+
+    if (isLocalToRemote && runner && preUploadTasks.length > 0) {
+      await runner('pre', preUploadTasks, this._getUploadHookContext());
+    }
+
+    await transfer();
+
+    if (isLocalToRemote && runner && postUploadTasks.length > 0) {
+      try {
+        await runner('post', postUploadTasks, this._getUploadHookContext());
+      } catch (error) {
+        const err = error instanceof Error ? error : String(error);
+        logger.error(err, `post upload hooks failed for ${this.localFsPath}`);
+      }
+    }
+  }
+
+  private _getUploadHookContext(): UploadHookContext {
+    return {
+      localFsPath: this.localFsPath,
+      remoteFsPath:
+        this._transferDirection === TransferDirection.LOCAL_TO_REMOTE
+          ? this._targetFsPath
+          : this._srcFsPath,
+      transferDirection: this._transferDirection,
+      transferType: this._transferDirection,
+      uploadTrigger: this._TransferOption.uploadTrigger,
+      workspace: this._TransferOption.uploadHookWorkspace,
+      serviceName: this._TransferOption.uploadHookServiceName,
+    };
   }
 
   cancel() {

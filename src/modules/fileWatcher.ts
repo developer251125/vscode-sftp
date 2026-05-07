@@ -6,7 +6,7 @@ import { upload, removeRemote } from '../fileHandlers';
 import { WatcherService, TransferDirection } from '../core';
 import app from '../app';
 import StatusBarItem from '../ui/statusBarItem';
-import { getRunningTransformTasks } from './serviceManager';
+import { getFileService, getRunningTransformTasks } from './serviceManager';
 
 const watchers: {
   [x: string]: vscode.FileSystemWatcher;
@@ -35,7 +35,23 @@ function doUpload() {
     const fspath = uri.fsPath;
     logger.info(`[watcher/updated] ${fspath}`);
     try {
-      await upload(uri);
+      let preUploadTasks: string[] = [];
+      let postUploadTasks: string[] = [];
+      const fileService = getFileService(uri);
+      if (fileService) {
+        const config = fileService.getConfig();
+        const watcherConfig = config.watcher || ({} as any);
+        preUploadTasks = (config.preUploadTasks || []).concat(watcherConfig.preUploadTasks || []);
+        postUploadTasks = (config.postUploadTasks || []).concat(
+          watcherConfig.postUploadTasks || []
+        );
+      }
+
+      await upload(uri, {
+        uploadTrigger: 'watcher',
+        preUploadTasks,
+        postUploadTasks,
+      });
     } catch (error) {
       logger.error(error, `upload ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);

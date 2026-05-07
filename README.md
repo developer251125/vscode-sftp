@@ -111,6 +111,7 @@ You can see the full list of configuration options [here](https://github.com/Nat
   - [Usage](#usage)
   - [Example configurations](#example-configurations)
     - [Simple](#simple)
+    - [Upload Hooks (Pre/Post Tasks)](#upload-hooks-prepost-tasks)
     - [Profiles](#profiles)
     - [Multiple Context](#multiple-context)
     - [Connection Hopping](#connection-hopping)
@@ -134,6 +135,54 @@ You can see the full list of configuration options [here](https://github.com/Nat
   "remotePath": "/remote/workspace"
 }
 ```
+
+### Upload Hooks (Pre/Post Tasks)
+Use `preUploadTasks` to block uploads when checks fail and `postUploadTasks` for follow-up actions.
+
+Each entry supports:
+- a VS Code task label (from `.vscode/tasks.json`), or
+- a shell command (PowerShell, bash, cmd, etc.)
+
+If a task label matches an existing VS Code task, SFTP executes the task API. Otherwise it runs the entry as a shell command.
+
+Pre hooks fail fast and stop that file upload. Post hooks run after successful upload and log errors without rolling back the uploaded file.
+
+```json
+{
+  "host": "host",
+  "username": "username",
+  "remotePath": "/var/www/app",
+  "uploadOnSave": true,
+
+  "preUploadTasks": [
+    "php-lint-current-file",
+    "powershell -NoProfile -Command \"Write-Host Pre-check ${localPath}\""
+  ],
+  "postUploadTasks": [
+    "npm run docs:update -- ${localPath}",
+    "echo Uploaded ${localPath} -> ${remotePath}"
+  ],
+
+  "watcher": {
+    "files": "**/*.php",
+    "autoUpload": true,
+    "autoDelete": false,
+    "preUploadTasks": [
+      "echo watcher-trigger ${trigger}"
+    ],
+    "postUploadTasks": [
+      "echo watcher-uploaded ${localPath}"
+    ]
+  }
+}
+```
+
+Supported shell placeholders:
+- `${localPath}`
+- `${remotePath}`
+- `${workspace}`
+- `${serviceName}`
+- `${trigger}` (`manual`, `uploadOnSave`, `watcher`)
 
 ### Profiles
 ```json

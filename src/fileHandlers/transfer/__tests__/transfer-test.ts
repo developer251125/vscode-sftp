@@ -3,7 +3,7 @@ jest.mock('fs');
 import { vol } from 'memfs';
 import * as fs from 'fs';
 import * as path from 'path';
-import { sync, TransferDirection } from '../transfer';
+import { sync, transfer, TransferDirection } from '../transfer';
 import localFs from '../../../core/localFs';
 import TransferTask from '../../../core/transferTask';
 import RemoteFs from '../../../../test/helper/localRemoteFs';
@@ -528,6 +528,145 @@ describe('transfer algorithm', () => {
           '/local/c/d/d-b',
         ].formatSep().sort()
       );
+    });
+  });
+
+  describe('upload hooks', () => {
+    afterEach(() => {
+      vol.reset();
+    });
+
+    test('pre upload hook failure aborts file transfer', async () => {
+      fillFs({
+        local: {
+          linted: file('ok', 1),
+        },
+      });
+
+      const task: TransferTask[] = [];
+      const collect = (a: TransferTask) => task.push(a);
+      await transfer(
+        {
+          srcFsPath: '/local/linted',
+          srcFs: localFs,
+          targetFs: localFs,
+          targetFsPath: '/remote/linted',
+          transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          transferOption: {
+            perserveTargetMode: false,
+            preUploadTasks: ['lint'],
+            runUploadHooks: async () => {
+              throw new Error('lint failed');
+            },
+          },
+        },
+        collect
+      );
+
+      expect(task.length).toEqual(1);
+      await expect(task[0].run()).rejects.toThrow('lint failed');
+      expect(fs.existsSync('/remote/linted')).toBe(false);
+    });
+
+    test('pre and post hooks run in order for successful upload', async () => {
+      fillFs({
+        local: {
+          app: file('content', 1),
+        },
+      });
+
+      const task: TransferTask[] = [];
+      const phases: string[] = [];
+      const collect = (a: TransferTask) => task.push(a);
+      await transfer(
+        {
+          srcFsPath: '/local/app',
+          srcFs: localFs,
+          targetFs: localFs,
+          targetFsPath: '/remote/app',
+          transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          transferOption: {
+            perserveTargetMode: false,
+            preUploadTasks: ['lint'],
+            postUploadTasks: ['docs'],
+            runUploadHooks: async phase => {
+              phases.push(phase);
+            },
+          },
+        },
+        collect
+      );
+
+      (task[0] as any)._transferFile = async () => undefined;
+      await task[0].run();
+      expect(phases).toEqual(['pre', 'post']);
+    });
+
+    test('post upload hook failure does not roll back transfer', async () => {
+      fillFs({
+        local: {
+          index: file('ok', 1),
+        },
+      });
+
+      const task: TransferTask[] = [];
+      const collect = (a: TransferTask) => task.push(a);
+      await transfer(
+        {
+          srcFsPath: '/local/index',
+          srcFs: localFs,
+          targetFs: localFs,
+          targetFsPath: '/remote/index',
+          transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          transferOption: {
+            perserveTargetMode: false,
+            postUploadTasks: ['after-upload'],
+            runUploadHooks: async phase => {
+              if (phase === 'post') {
+                throw new Error('post failed');
+              }
+            },
+          },
+        },
+        collect
+      );
+
+      (task[0] as any)._transferFile = async () => undefined;
+      await expect(task[0].run()).resolves.toBeUndefined();
+    });
+
+    test('hooks are skipped for remote to local transfer', async () => {
+      fillFs({
+        remote: {
+          one: file('x', 1),
+        },
+      });
+
+      const task: TransferTask[] = [];
+      const collect = (a: TransferTask) => task.push(a);
+      let hookCount = 0;
+      await transfer(
+        {
+          srcFsPath: '/remote/one',
+          srcFs: localFs,
+          targetFs: localFs,
+          targetFsPath: '/local/one',
+          transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          transferOption: {
+            perserveTargetMode: false,
+            preUploadTasks: ['lint'],
+            postUploadTasks: ['docs'],
+            runUploadHooks: async () => {
+              hookCount += 1;
+            },
+          },
+        },
+        collect
+      );
+
+      (task[0] as any)._transferFile = async () => undefined;
+      await task[0].run();
+      expect(hookCount).toEqual(0);
     });
   });
 });

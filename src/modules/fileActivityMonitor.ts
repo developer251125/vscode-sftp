@@ -50,7 +50,9 @@ async function handleFileSave(uri: vscode.Uri) {
     uri = vscode.Uri.file(fspath);
     logger.info(`[file-save] ${fspath}`);
     try {
-      await uploadFile(uri);
+      await uploadFile(uri, {
+        uploadTrigger: 'uploadOnSave',
+      });
     } catch (error) {
       logger.error(error, `download ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);

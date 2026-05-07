@@ -40,6 +40,8 @@ interface ServiceOption {
   useTempFile: boolean;
   openSsh: boolean;
   downloadOnOpen: boolean | 'confirm';
+  preUploadTasks: string[];
+  postUploadTasks: string[];
   filePerm?: number;
   dirPerm?: number;
   syncOption: {
@@ -62,6 +64,8 @@ interface WatcherConfig {
   files: false | string;
   autoUpload: boolean;
   autoDelete: boolean;
+  preUploadTasks?: string[];
+  postUploadTasks?: string[];
 }
 
 interface SftpOption {
@@ -152,6 +156,8 @@ function getHostInfo(config) {
     'useTempFile',
     'openSsh',
     'downloadOnOpen',
+    'preUploadTasks',
+    'postUploadTasks',
     'ignore',
     'ignoreFile',
     'watcher',

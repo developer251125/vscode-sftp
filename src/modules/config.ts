@@ -41,6 +41,12 @@ const configScheme = {
   useTempFile: Joi.boolean(),
   openSsh: Joi.boolean(),
   downloadOnOpen: Joi.boolean().allow('confirm'),
+  preUploadTasks: Joi.array()
+    .min(0)
+    .items(Joi.string()),
+  postUploadTasks: Joi.array()
+    .min(0)
+    .items(Joi.string()),
 
   ignore: Joi.array()
     .min(0)
@@ -50,6 +56,12 @@ const configScheme = {
     files: Joi.string().allow(false, null),
     autoUpload: Joi.boolean(),
     autoDelete: Joi.boolean(),
+    preUploadTasks: Joi.array()
+      .min(0)
+      .items(Joi.string()),
+    postUploadTasks: Joi.array()
+      .min(0)
+      .items(Joi.string()),
   },
   concurrency: Joi.number().integer(),
 
@@ -77,6 +89,8 @@ const defaultConfig = {
   useTempFile: false,
   openSsh: false,
   downloadOnOpen: false,
+  preUploadTasks: [],
+  postUploadTasks: [],
   ignore: [],
   // ignoreFile: undefined,
   // watcher: {
